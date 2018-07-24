@@ -15,7 +15,7 @@ namespace CommentReview.App_Code.Helpers
             _client = new HttpClient();
         }
 
-        public static HttpClient SendAction(string baseUrl)
+        public static HttpClient SendAction(string baseUrl = "")
         {
             _client.BaseAddress = new Uri(baseUrl);
             _client.DefaultRequestHeaders.Accept.Clear();
