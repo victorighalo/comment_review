@@ -5,17 +5,22 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using CommentReview.Models;
-using CommentReview.App_Code.Helpers;
+using CommentReview.App_Code.Services;
 using System.Text;
 using System.IO;
 using System.Net.Http;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
+using System.Net;
 
 namespace CommentReview.Controllers
 {
     public class HomeController : Controller
     {
         private HttpClient _network = new HttpClient();
+        WebClient httpClient = new WebClient();
+
+        private readonly YoutubeService _youtubeService = new YoutubeService(new HttpClient());
 
         public IActionResult Index()
         {
@@ -46,17 +51,36 @@ namespace CommentReview.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-        public void LoadUrl()
-        {
-            var request = Network.SendAction("http://www.nairaland.com");
-            request.GetAsync("/");
-        }
+
 
         public class TodoItem
         {
             public long Id { get; set; }
             public string Name { get; set; }
             public bool IsComplete { get; set; }
+        }
+
+
+        public async Task LoadYoutube()
+        {
+            try
+            {
+
+                var result = await _youtubeService.GetComments();
+                var newdata = YoutubeComments.FromJson(result);
+                await HttpContext.Response.WriteAsync(newdata.ToJson().ToString());
+                //var result = await _youtubeService.GetComments();
+                ////await HttpContext.Response.WriteAsync(result.ToString());
+
+                //string jsonstring = JsonConvert.SerializeObject(result);
+
+                //var Comments = JsonConvert.DeserializeObject<ICollection<RootObject>>(result);
+                //await HttpContext.Response.WriteAsync(Comments.ToString());
+            }
+            catch (HttpRequestException e)
+            {
+                await HttpContext.Response.WriteAsync(e.Message.ToString());
+            }
         }
 
         public void ExportToCsv()

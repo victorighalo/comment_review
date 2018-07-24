@@ -1,4 +1,5 @@
-﻿@{
+﻿@model YoutubeViewModel
+@{
     ViewData["Title"] = "Home Page";
 }
 
@@ -6,7 +7,16 @@
 <h1>Comment Review</h1>
 </div>
 
-<div class="row">
-    <button class="btn btn-primary" btn-lg>@Html.ActionLink("Click", "ExportToCsv")</button>
-    
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <button class="btn btn-primary btn-lg">@Html.ActionLink("Click", "ExportToCsv")</button>
+        </div>
+        <div class="col-md-6">
+            <form asp-controller="Home" asp-action="LoadYoutube" method="post">
+                YouTube Link:  <input asp-for="Link" /> <br />
+                <button type="submit">Register</button>
+            </form>
+        </div>
+    </div>
 </div>
