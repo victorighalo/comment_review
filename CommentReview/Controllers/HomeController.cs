@@ -106,13 +106,13 @@ namespace CommentReview.Controllers
             string projectPath = Directory.GetParent(Directory.GetCurrentDirectory()).FullName;
             var assetsDirectory = Directory.CreateDirectory(projectPath + @"\assets\");
 
-            var result = new List<TodoItem>()
-            {
-                new TodoItem{ Id = 1, Name = "Play Ball" },
-                new TodoItem{ Id = 2, Name = "Play Soccer" },
-                new TodoItem{ Id = 1, Name = "Play Video Game"},
-                new TodoItem{ Id = 1, Name = "Play Tennis" }
-            };
+            //var result = new List<TodoItem>()
+            //{
+            //    new TodoItem{ Id = 1, Name = "Play Ball" },
+            //    new TodoItem{ Id = 2, Name = "Play Soccer" },
+            //    new TodoItem{ Id = 1, Name = "Play Video Game"},
+            //    new TodoItem{ Id = 1, Name = "Play Tennis" }
+            //};
 
             //Change response type to force downaload
             HttpContext.Response.Clear();
