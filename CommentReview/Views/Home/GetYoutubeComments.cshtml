@@ -1,0 +1,32 @@
+﻿
+@{
+   
+    ViewData["Title"] = "GetYoutubeComments";
+}
+
+<h2>GetYoutubeComments</h2>
+@*<p>@Model.PageInfo.TotalResults</p>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <td>UserName</td>
+            <td>Date</td>
+            <td>Star rating</td>
+            <td>Comment</td>
+        </tr>
+    </thead>
+    <tbody>
+
+            @foreach(var item in Model.Items)
+            {
+        <tr>
+            <td>@item.Snippet.TopLevelComment.Snippet.AuthorDisplayName</td>
+            <td>@item.Snippet.TopLevelComment.Snippet.PublishedAt</td>
+            <td>@item.Snippet.TopLevelComment.Snippet.ViewerRating</td>
+            <td>@item.Snippet.TopLevelComment.Snippet.TextOriginal</td>
+        </tr>
+
+            }
+
+    </tbody>
+</table>*@

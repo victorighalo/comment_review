@@ -12,13 +12,13 @@ using System.Net.Http;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System.Net;
+using static CommentReview.Models.YoutubeViewModel;
+using CommentReview.Models.YoutubeResponseModel;
 
 namespace CommentReview.Controllers
 {
     public class HomeController : Controller
     {
-        private HttpClient _network = new HttpClient();
-        WebClient httpClient = new WebClient();
 
         private readonly YoutubeService _youtubeService = new YoutubeService(new HttpClient());
 
@@ -60,31 +60,49 @@ namespace CommentReview.Controllers
             public bool IsComplete { get; set; }
         }
 
-
-        public async Task LoadYoutube()
+        [Route("youtubecomments")]
+        public IActionResult GetYoutubeComments(string token = "")
         {
             try
             {
-
-                var result = await _youtubeService.GetComments();
-                var newdata = YoutubeComments.FromJson(result);
-                await HttpContext.Response.WriteAsync(newdata.ToJson().ToString());
-                //var result = await _youtubeService.GetComments();
-                ////await HttpContext.Response.WriteAsync(result.ToString());
-
-                //string jsonstring = JsonConvert.SerializeObject(result);
-
-                //var Comments = JsonConvert.DeserializeObject<ICollection<RootObject>>(result);
-                //await HttpContext.Response.WriteAsync(Comments.ToString());
+                //var resultJson = await _youtubeService.GetComments(token);
+                //var resultClass = YoutubeComments.FromJson(resultJson);
+                return View();
             }
             catch (HttpRequestException e)
             {
-                await HttpContext.Response.WriteAsync(e.Message.ToString());
+                return Content("Error processing" + e);
             }
         }
 
+        [Route("youtubecommentsjson/{token?}")]
+        public async Task<IActionResult> GetYoutubeCommentsJson(string token)
+        {
+            try
+            {
+                var resultJson = await _youtubeService.GetComments(token);
+                var resultClass = JsonConvert.DeserializeObject(resultJson);
+                return Ok(JsonConvert.SerializeObject(resultClass));
+            }
+            catch (HttpRequestException e)
+            {
+                return Content("Error processing" + e);
+            }
+        }
+
+        [HttpPost]
+        [Route("export")]
         public void ExportToCsv()
         {
+            //receive comments in JSON
+            var requestData = Request.HttpContext.Request.Body;
+            //Serialize comments to Class Object
+            var requestDataToJson = JsonConvert.SerializeObject(requestData);
+            
+            var requestDataToClass = YoutubeResponseModel.FromJson(requestData.ToString());
+
+
+
             string projectPath = Directory.GetParent(Directory.GetCurrentDirectory()).FullName;
             var assetsDirectory = Directory.CreateDirectory(projectPath + @"\assets\");
 
@@ -96,20 +114,20 @@ namespace CommentReview.Controllers
                 new TodoItem{ Id = 1, Name = "Play Tennis" }
             };
 
+            //Change response type to force downaload
             HttpContext.Response.Clear();
             HttpContext.Response.Headers.Add("content-disposition", "attachment;filename = ExportedCSV.csv");
-            
             HttpContext.Response.ContentType = "text/csv";
 
             StringBuilder todos = new StringBuilder();
 
             //Add Header - Start
-            todos.Append("Id")
-                .Append(',')
-                .Append("Name")
-                .Append(',')
-                .Append("Done");
-            todos.AppendLine();
+            //todos.Append("Id")
+            //    .Append(',')
+            //    .Append("Name")
+            //    .Append(',')
+            //    .Append("Done");
+            //todos.AppendLine();
             //Add Header - End
 
             //Add content body - start
@@ -122,6 +140,14 @@ namespace CommentReview.Controllers
                 .Append(',')
                 .Append(record.IsComplete)
                .Append(Environment.NewLine);
+            }
+
+            foreach (var item in requestDataToClass)
+            {
+                todos
+              .Append(item.Snippet.TopLevelComment.Snippet.TextOriginal)
+               .Append(Environment.NewLine);
+                
             }
             //Add content body - start
 
