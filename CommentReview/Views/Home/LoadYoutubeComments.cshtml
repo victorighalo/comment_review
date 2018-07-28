@@ -1,0 +1,24 @@
+﻿@model CommentReview.Models.YoutubeComments
+@{
+    ViewData["Title"] = "LoadYoutubeComments";
+    var items = Model.Items;
+}
+
+<h2>items</h2>
+
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <td>Comment</td>
+        </tr>
+    </thead>
+<tbody>
+    @foreach(var Item in items)
+    {
+    <tr><td>@Item.Snippet.TopLevelComment.Snippet.TextOriginal</td></tr>
+
+    }
+</tbody>
+    </table>
+

@@ -6,6 +6,7 @@ using Newtonsoft.Json.Converters;
 
 namespace CommentReview.Models
 {
+    [JsonObject]
     public partial class YoutubeComments
     {
         [JsonProperty("kind")]

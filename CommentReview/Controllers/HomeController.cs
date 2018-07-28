@@ -27,12 +27,18 @@ namespace CommentReview.Controllers
             return View();
         }
 
-        public IActionResult About()
+        public async Task<IActionResult> About()
         {
-            ViewData["Message"] = Directory.GetParent(Directory.GetCurrentDirectory()).FullName;
-            return View();
-        }
 
+
+            var client = new WebClient();
+            const string url = "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet%2Creplies&videoId=wtLJPvx7-ys&key=AIzaSyCzy_i2tptiVyvoIeMqVDSXZBH0_J3abLI";
+            var response = client.DownloadString(url);
+            var youtube = YoutubeComments.FromJson(response);
+
+            return View(youtube);
+        }
+  
         public IActionResult Contact()
         {
             ViewData["Message"] = "Your contact page.";
@@ -41,6 +47,11 @@ namespace CommentReview.Controllers
         }
 
         public IActionResult Privacy()
+        {
+            return View();
+        }
+
+        public IActionResult Youtube()
         {
             return View();
         }
@@ -60,15 +71,16 @@ namespace CommentReview.Controllers
             public bool IsComplete { get; set; }
         }
 
-
-        public async Task LoadYoutube()
+        [Route("Loadyoutubecomments")]
+        public async Task<IActionResult> LoadYoutubeComments()
         {
             try
             {
 
-                var result = await _youtubeService.GetComments();
-                var newdata = YoutubeComments.FromJson(result);
-                await HttpContext.Response.WriteAsync(newdata.ToJson().ToString());
+                var jsonData = await _youtubeService.GetComments();
+                var youtubeData = YoutubeComments.FromJson(jsonData);
+                return View(youtubeData);
+                //await HttpContext.Response.WriteAsync(newdata.ToJson().ToString());
                 //var result = await _youtubeService.GetComments();
                 ////await HttpContext.Response.WriteAsync(result.ToString());
 
@@ -79,7 +91,7 @@ namespace CommentReview.Controllers
             }
             catch (HttpRequestException e)
             {
-                await HttpContext.Response.WriteAsync(e.Message.ToString());
+                return View(e.Message.ToString());
             }
         }
 
