@@ -1,31 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace CommentReview.Models
+namespace CommentReview.Models.YoutubeResponseModel
 {
-    [JsonObject]
-    public partial class YoutubeComments
-    {
-        [JsonProperty("nextPageToken")]
-        public string NextPageToken { get; set; }
 
-        [JsonProperty("pageInfo")]
-        public PageInfo PageInfo { get; set; }
-
-        [JsonProperty("items")]
-        public Item[] Items { get; set; }
-    }
-
-    public partial class Item
+    public partial class YoutubeResponseModel
     {
         [JsonProperty("snippet")]
-        public ItemSnippet Snippet { get; set; }
+        public YoutubeResponseModelSnippet Snippet { get; set; }
     }
 
-    public partial class ItemSnippet
+    public partial class YoutubeResponseModelSnippet
     {
         [JsonProperty("videoId")]
         public VideoId VideoId { get; set; }
@@ -61,27 +51,18 @@ namespace CommentReview.Models
         public DateTimeOffset PublishedAt { get; set; }
     }
 
-    public partial class PageInfo
-    {
-        [JsonProperty("totalResults")]
-        public long TotalResults { get; set; }
-
-        [JsonProperty("resultsPerPage")]
-        public long ResultsPerPage { get; set; }
-    }
-
-    public enum VideoId { WtLjPvx7Ys };
+    public enum VideoId { IublAxAm8Hq };
 
     public enum ViewerRating { None };
 
-    public partial class YoutubeComments
+    public partial class YoutubeResponseModel
     {
-        public static YoutubeComments FromJson(string json) => JsonConvert.DeserializeObject<YoutubeComments>(json, CommentReview.Models.Converter.Settings);
+        public static YoutubeResponseModel[] FromJson(string json) => JsonConvert.DeserializeObject<YoutubeResponseModel[]>(json, CommentReview.Models.YoutubeResponseModel.Converter.Settings);
     }
 
     public static class Serialize
     {
-        public static string ToJson(this YoutubeComments self) => JsonConvert.SerializeObject(self, CommentReview.Models.Converter.Settings);
+        public static string ToJson(this YoutubeResponseModel[] self) => JsonConvert.SerializeObject(self, CommentReview.Models.YoutubeResponseModel.Converter.Settings);
     }
 
     internal static class Converter
@@ -106,9 +87,9 @@ namespace CommentReview.Models
         {
             if (reader.TokenType == JsonToken.Null) return null;
             var value = serializer.Deserialize<string>(reader);
-            if (value == "wtLJPvx7-ys")
+            if (value == "iublAXAm8HQ")
             {
-                return VideoId.WtLjPvx7Ys;
+                return VideoId.IublAxAm8Hq;
             }
             throw new Exception("Cannot unmarshal type VideoId");
         }
@@ -121,9 +102,9 @@ namespace CommentReview.Models
                 return;
             }
             var value = (VideoId)untypedValue;
-            if (value == VideoId.WtLjPvx7Ys)
+            if (value == VideoId.IublAxAm8Hq)
             {
-                serializer.Serialize(writer, "wtLJPvx7-ys");
+                serializer.Serialize(writer, "iublAXAm8HQ");
                 return;
             }
             throw new Exception("Cannot marshal type VideoId");
@@ -165,4 +146,5 @@ namespace CommentReview.Models
 
         public static readonly ViewerRatingConverter Singleton = new ViewerRatingConverter();
     }
+
 }
