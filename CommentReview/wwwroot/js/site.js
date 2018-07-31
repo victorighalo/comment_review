@@ -24,15 +24,18 @@ $(document).ready(function () {
         $.ajax(
             {
                 method: 'POST',
-                contentType: 'application/json',
+                contentType: 'application/json; charset=utf-8',
                 dateType: 'json',
+                processData:false,
                 url: 'http://localhost:51965/export/',
                 data: JSON.stringify(commentsArray)
             }).
             done(function (data) {
                 console.info(data);
+                download('data:text/plain,'+data+"", "comments.csv", "text/csv");
             })
             .fail(function (error) {
+                $("#indicator").text("Failed!");
                 console.log(error)
             })
     }
@@ -50,11 +53,22 @@ $(document).ready(function () {
             GetComments(jsonData.nextPageToken);
         }
         else {
-            console.info("Stream End");
-            PostComments();
+            $("#indicator").fadeOut();
+            $("#downloadCommentsAction").fadeIn();
             }
         
     }
+    
+    $("#extract_action").click(function (event) {
+        event.preventDefault();
+        $("#downloadCommentsAction").fadeOut();
+        $("#indicator").fadeIn();
+        GetComments();
+    })
 
-    GetComments();
+    $("#downloadCommentsAction").click(function (event) {
+        event.preventDefault();
+        $("#indicator").fadeOut();
+        PostComments();
+    })
 })

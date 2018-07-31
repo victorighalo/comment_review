@@ -27,8 +27,6 @@ namespace CommentReview.App_Code.Services
 
             response.EnsureSuccessStatusCode();
 
-
-
             var result = await response.Content.ReadAsStringAsync();
 
             return result;

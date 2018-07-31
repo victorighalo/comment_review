@@ -27,7 +27,12 @@ body {
 #qrCode {
     margin: 15px;
 }
-
+#indicator {
+    display: none
+}
+#downloadCommentsAction {
+    display: none
+}
 /* Hide/rearrange for smaller screens */
 @media screen and (max-width: 767px) {
     /* Hide captions */
