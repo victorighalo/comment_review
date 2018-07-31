@@ -1,18 +1,19 @@
 ﻿// Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
 // for details on configuring this project to bundle and minify static web assets.
 
-// Write your JavaScript code.
+// front end functionality for YouTube Comments Scrapping
 $(document).ready(function () {
     let count = 0;
     let totalComment = 0;
     let commentsArray = [];
+    let youtubeLink;
 
-    //Ajax Operations
+
     //Get Youtube comments wiht link from server
-    function GetComments(token = "") {
+    function GetComments(token = "", link) {
         $.ajax(
             {
-                url: 'http://localhost:51965/youtubecommentsjson/'+token
+                url: 'http://localhost:51965/youtubecommentsjson/'+link+"/"+token
             }).
             done(function (data) {
                 ProcessComments(data);
@@ -31,12 +32,10 @@ $(document).ready(function () {
                 data: JSON.stringify(commentsArray)
             }).
             done(function (data) {
-                console.info(data);
                 download('data:text/plain,'+data+"", "comments.csv", "text/csv");
             })
             .fail(function (error) {
                 $("#indicator").text("Failed!");
-                console.log(error)
             })
     }
 
@@ -49,8 +48,7 @@ $(document).ready(function () {
             $.each(jsonData.items, function (index, data) {
                 commentsArray.push(data); 
             })
-            console.log(commentsArray)
-            GetComments(jsonData.nextPageToken);
+            GetComments(jsonData.nextPageToken, youtubeLink);
         }
         else {
             $("#indicator").fadeOut();
@@ -63,7 +61,13 @@ $(document).ready(function () {
         event.preventDefault();
         $("#downloadCommentsAction").fadeOut();
         $("#indicator").fadeIn();
-        GetComments();
+        var link = $("#youtubelink").val();
+        youtubeLink = youtube_parser(link)
+        if (link === false) {
+            alert("Enter a valid Youtube link");
+            return false;
+        }
+        GetComments("", youtubeLink);
     })
 
     $("#downloadCommentsAction").click(function (event) {
@@ -71,4 +75,13 @@ $(document).ready(function () {
         $("#indicator").fadeOut();
         PostComments();
     })
+
+    //Credit Aaron Thoma
+    //Source: https://stackoverflow.com/questions/3452546/how-do-i-get-the-youtube-video-id-from-a-url
+    //Youtube URL Parser
+    function youtube_parser(url) {
+        var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#\&\?]*).*/;
+        var match = url.match(regExp);
+        return (match && match[7].length === 11) ? match[7] : false;
+    }
 })

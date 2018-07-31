@@ -16,34 +16,24 @@ using static CommentReview.Models.YoutubeViewModel;
 using CommentReview.Models.YoutubeResponseModel;
 using CommentReview.Models.CommentsViewModel;
 using System.Reflection;
+using HtmlAgilityPack;
+using ScrapySharp.Network;
+using ScrapySharp.Extensions;
 
 namespace CommentReview.Controllers
 {
-    
+
     public class HomeController : Controller
     {
         public byte[] tempdoc;
-        private readonly YoutubeService _youtubeService = new YoutubeService(new HttpClient());
+        private readonly YoutubeService _youtubeService;
+
+        public HomeController(YoutubeService youtubeService)
+        {
+            _youtubeService = youtubeService;
+        }
 
         public IActionResult Index()
-        {
-            return View();
-        }
-
-        public IActionResult About()
-        {
-            ViewData["Message"] = Directory.GetParent(Directory.GetCurrentDirectory()).FullName;
-            return View();
-        }
-
-        public IActionResult Contact()
-        {
-            ViewData["Message"] = "Your contact page.";
-
-            return View();
-        }
-
-        public IActionResult Privacy()
         {
             return View();
         }
@@ -54,28 +44,32 @@ namespace CommentReview.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-
-        [Route("youtubecomments")]
-        public IActionResult GetYoutubeComments(string token = "")
+        [HttpGet]
+        [Route("amazonreviews")]
+        public async Task<IActionResult> GetAmazonReviews()
         {
-            try
-            {
-                //var resultJson = await _youtubeService.GetComments(token);
-                //var resultClass = YoutubeComments.FromJson(resultJson);
-                return View();
-            }
-            catch (HttpRequestException e)
-            {
-                return Content("Error processing" + e);
-            }
+            var url = "https://www.amazon.com/Vinci-Code-Dan-Brown/product-reviews/0307474275/ref=cm_cr_dp_d_show_all_top?ie=UTF8&reviewerType=all_reviews";
+            var web = new HtmlWeb();
+            var page = await web.LoadFromWebAsync(url);
+
+          
+            ScrapingBrowser browser = new ScrapingBrowser();
+            WebPage homePage = browser.NavigateToPage(new Uri("https://www.amazon.com/Vinci-Code-Dan-Brown/product-reviews/0307474275/ref=cm_cr_dp_d_show_all_top?ie=UTF8&reviewerType=all_reviews"));
+            HtmlNode[] list = homePage.Html.CssSelect("#cm_cr-review_list div.review").ToArray();
+            return Ok(list);
         }
 
-        [Route("youtubecommentsjson/{token?}")]
-        public async Task<IActionResult> GetYoutubeCommentsJson(string token)
+        [HttpGet]
+        [Route("youtubecommentsjson/{link}/{token?}")]
+        public async Task<IActionResult> GetYoutubeCommentsJson(string token, string link)
         {
+            if (string.IsNullOrEmpty(link))
+            {
+                return BadRequest("Link Empty");
+            }
             try
             {
-                var resultJson = await _youtubeService.GetComments(token);
+                var resultJson = await _youtubeService.GetComments(token, link);
                 var resultClass = JsonConvert.DeserializeObject(resultJson);
                 return Ok(JsonConvert.SerializeObject(resultClass));
             }
@@ -90,19 +84,8 @@ namespace CommentReview.Controllers
         public void ExportToCsv([FromBody]IList<CommentsViewModel> model)
         {
 
-            ////receive comments in JSON
-            //var requestData = Request.HttpContext.Request.Body;
-
-            ////Serialize comments to Class Object
-            //var requestDataToJson = JsonConvert.SerializeObject(model);
-
-            //var requestDataToClass = YoutubeResponseModel.FromJson(requestDataToJson);
-            //var resultClass = JsonConvert.DeserializeObject<CommentsViewModel>(model);
-
-
-
-            string projectPath = Directory.GetParent(Directory.GetCurrentDirectory()).FullName;
-            var assetsDirectory = Directory.CreateDirectory(projectPath + @"\assets\");
+            //string projectPath = Directory.GetParent(Directory.GetCurrentDirectory()).FullName;
+            //var assetsDirectory = Directory.CreateDirectory(projectPath + @"\assets\");
 
             StringBuilder comments = new StringBuilder();
 
@@ -119,40 +102,41 @@ namespace CommentReview.Controllers
                 .AppendLine();
             //Add Header - End
 
+            //Add content body - start
             foreach (var item in model)
             {
-               comments
+                var comment = item.Snippet.TopLevelComment.Snippet.textDisplay.Replace(",", "");
+                comments
               .Append(item.Snippet.TopLevelComment.Snippet.authorDisplayName)
               .Append(',')
               .Append(item.Snippet.TopLevelComment.Snippet.publishedAt)
               .Append(',')
               .Append(item.Snippet.TopLevelComment.Snippet.viewerRating)
               .Append(',')
-              .Append(item.Snippet.TopLevelComment.Snippet.textDisplay)
+              .Append(comment)
               .Append(',')
               .Append("https://www.youtube.com/"+item.Snippet.TopLevelComment.Snippet.videoId)
               .AppendLine();
-
             }
-            //Add content body - start
+            //Add content body - End
 
             //Write to drive in case it's needed for record purposes
-            var path = assetsDirectory.ToString() + "YoutubeComments.csv";
-            var fileExist = System.IO.File.Exists(path);
-            if (fileExist)
-            {
-                System.IO.File.Delete(path);
-                System.IO.File.AppendAllText(path, comments.ToString());
-            }
-            else
-            {
-                using (FileStream fs = System.IO.File.Create(path))
-                {
-                    fs.Close();
-                    System.IO.File.AppendAllText(path, comments.ToString());
-                }
-            }
-            //return Ok(model.ToList());
+            //var path = assetsDirectory.ToString() + "YoutubeComments.csv";
+            //var fileExist = System.IO.File.Exists(path);
+            //if (fileExist)
+            //{
+            //    System.IO.File.Delete(path);
+            //    System.IO.File.AppendAllText(path, comments.ToString());
+            //}
+            //else
+            //{
+            //    using (FileStream fs = System.IO.File.Create(path))
+            //    {
+            //        fs.Close();
+            //        System.IO.File.AppendAllText(path, comments.ToString());
+            //    }
+            //}
+         
 
             tempdoc = Encoding.ASCII.GetBytes(comments.ToString());
             //Change response type to force downaload
@@ -162,18 +146,7 @@ namespace CommentReview.Controllers
             HttpContext.Response.Headers.Add("content-disposition", "attachment;filename=YoutubeComments.csv");
             HttpContext.Response.Body.Write(tempdoc);
 
-            this.RedirectToAction(nameof(RedirectDownload), MethodBase.GetCurrentMethod().GetParameters().ToDictionary(x => x.Name, x => (object)null));
-        }
-
-        [Route("download")]
-        public void RedirectDownload()
-        {
-            //Change response type to force downaload
-            HttpContext.Response.Clear();
-            HttpContext.Response.Headers.Add("content-disposition", "attachment;filename=YoutubeComments.csv");
-            HttpContext.Response.Headers.Add("Content-Length", tempdoc.Length.ToString());
-            HttpContext.Response.ContentType = "text/csv";
-            HttpContext.Response.Body.Write(tempdoc);
+           
         }
     }
 }
