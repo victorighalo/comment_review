@@ -22,6 +22,10 @@ using ScrapySharp.Extensions;
 
 namespace CommentReview.Controllers
 {
+    public class Amazon
+    {
+        public string Star { get; set; }
+    }
 
     public class HomeController : Controller
     {
@@ -46,17 +50,24 @@ namespace CommentReview.Controllers
 
         [HttpGet]
         [Route("amazonreviews")]
-        public async Task<IActionResult> GetAmazonReviews()
+        public IActionResult GetAmazonReviews()
         {
+            List<Amazon> amazonReviews = new List<Amazon>();
             var url = "https://www.amazon.com/Vinci-Code-Dan-Brown/product-reviews/0307474275/ref=cm_cr_dp_d_show_all_top?ie=UTF8&reviewerType=all_reviews";
-            var web = new HtmlWeb();
-            var page = await web.LoadFromWebAsync(url);
-
-          
             ScrapingBrowser browser = new ScrapingBrowser();
-            WebPage homePage = browser.NavigateToPage(new Uri("https://www.amazon.com/Vinci-Code-Dan-Brown/product-reviews/0307474275/ref=cm_cr_dp_d_show_all_top?ie=UTF8&reviewerType=all_reviews"));
-            HtmlNode[] list = homePage.Html.CssSelect("#cm_cr-review_list div.review").ToArray();
-            return Ok(list);
+            browser.AllowAutoRedirect = true;
+            browser.AllowMetaRedirect = true;
+            WebPage homePage = browser.NavigateToPage(new Uri(url));
+            
+            var list = homePage.Html.CssSelect("#cm_cr-review_list div.review");
+
+            foreach(var item in list.CssSelect("a.review-title"))
+            {
+                amazonReviews.Add(
+                    new Amazon() { Star = item.InnerText }
+                    );
+            }
+            return Ok(amazonReviews);
         }
 
         [HttpGet]
