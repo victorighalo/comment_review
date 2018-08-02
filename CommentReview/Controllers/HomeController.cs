@@ -50,24 +50,45 @@ namespace CommentReview.Controllers
 
         [HttpGet]
         [Route("amazonreviews")]
-        public IActionResult GetAmazonReviews()
+        public async Task<IActionResult> GetAmazonReviews()
         {
-            List<Amazon> amazonReviews = new List<Amazon>();
             var url = "https://www.amazon.com/Vinci-Code-Dan-Brown/product-reviews/0307474275/ref=cm_cr_dp_d_show_all_top?ie=UTF8&reviewerType=all_reviews";
+            dynamic data;
+            var result = await ProcessScrape(url);
+            if (!result.HasClass("a-disabled"))
+            {
+                var nextlink = result.Element("a").ChildAttributes("href").First().Value;
+                url = nextlink;
+                data = await ProcessScrape(url);
+            }
+         
+            return Ok("Worked");
+        }
+
+        public async Task<WebPage> Scrapper(string url)
+        {
             ScrapingBrowser browser = new ScrapingBrowser();
             browser.AllowAutoRedirect = true;
             browser.AllowMetaRedirect = true;
-            WebPage homePage = browser.NavigateToPage(new Uri(url));
-            
-            var list = homePage.Html.CssSelect("#cm_cr-review_list div.review");
+            WebPage homePage = await browser.NavigateToPageAsync(new Uri(url));
+            return homePage;
+        }
 
-            foreach(var item in list.CssSelect("a.review-title"))
-            {
-                amazonReviews.Add(
-                    new Amazon() { Star = item.InnerText }
-                    );
-            }
-            return Ok(amazonReviews);
+        public async Task<HtmlNode> ProcessScrape(string url)
+        {
+            List<Amazon> amazonReviews = new List<Amazon>();
+            var templink = url;
+            var homePage = await Scrapper(templink);
+            var list = homePage.Html.CssSelect("#cm_cr-review_list div.review");
+            var nextButton = homePage.Html.CssSelect("#cm_cr-pagination_bar ul.a-pagination > li.a-last").First();
+
+            foreach (var item in list.CssSelect("a.review-title"))
+                {
+                    amazonReviews.Add(
+                        new Amazon() { Star = item.InnerText }
+                        );
+                }
+            return nextButton;
         }
 
         [HttpGet]
