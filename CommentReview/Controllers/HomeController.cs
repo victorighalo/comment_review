@@ -25,6 +25,9 @@ namespace CommentReview.Controllers
     public class Amazon
     {
         public string Star { get; set; }
+        public string Date { get; set; }
+        public string Comment { get; set; }
+        public string Link { get; set; }
     }
     
 
@@ -83,11 +86,11 @@ namespace CommentReview.Controllers
                 foreach (var item in list.CssSelect("a.review-title"))
                 {
                     amazonReviews.Add(
-                        new Amazon() { Star = item.InnerText }
+                        new Amazon() { Star = item. }
                         );
                 }
-
-                await ProcessScrape(url);
+                return amazonReviews;
+                
             }
 
 
