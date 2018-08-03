@@ -84,4 +84,57 @@ $(document).ready(function () {
         var match = url.match(regExp);
         return (match && match[7].length === 11) ? match[7] : false;
     }
+
+
+
+    //Amazon
+
+    //Get Youtube comments wiht link from server
+    function GetAmazonReviews(link) {
+        var data = {"name":"link", "content": link}
+        $.ajax(
+            {
+                method: 'POST',
+                contentType: 'application/json; charset=utf-8',
+                dateType: 'json',
+                processData: false,
+                url: 'http://localhost:51965/amazonreviewsjson/',
+                data: JSON.stringify(data)
+            }).
+            done(function (data) {
+                PostReviews(data)
+            })
+    }
+
+    function PostReviews(data) {
+        $.ajax(
+            {
+                method: 'POST',
+                contentType: 'application/json; charset=utf-8',
+                dateType: 'json',
+                processData: false,
+                url: 'http://localhost:51965/exportreviews/',
+                data: JSON.stringify(data)
+            }).
+            done(function (data) {
+                download('data:text/plain,' + data + "", "comments.csv", "text/csv");
+                $("#indicator").fadeOut();
+            })
+            .fail(function (error) {
+                $("#indicator").text("Failed!");
+            })
+    }
+
+    $("#amazon_extract_action").click(function (event) {
+        event.preventDefault();
+        $("#downloadReviewsAction").fadeOut();
+        $("#indicator").fadeIn();
+        var link = $("#amazonlink").val();
+        if (link == "") {
+            alert("Enter a valid Amazon link");
+            return false;
+        }
+        GetAmazonReviews(link);
+    })
+
 })

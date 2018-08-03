@@ -20,23 +20,20 @@ using HtmlAgilityPack;
 using ScrapySharp.Network;
 using ScrapySharp.Extensions;
 
+
 namespace CommentReview.Controllers
 {
-    public class Amazon
+    public class JsonData
     {
-        public string Star { get; set; }
-        public string Date { get; set; }
-        public string Comment { get; set; }
-        public string Link { get; set; }
+        public string Name { get; set; }
+        public string Content { get; set; }
     }
-    
-
     public class HomeController : Controller
     {
         public byte[] tempdoc;
         private readonly YoutubeService _youtubeService;
-        List<Amazon> amazonReviews = new List<Amazon>();
-
+        List<AmazonViewModel> amazonReviews = new List<AmazonViewModel>();
+        int count = 0;
         public HomeController(YoutubeService youtubeService)
         {
             _youtubeService = youtubeService;
@@ -55,13 +52,30 @@ namespace CommentReview.Controllers
 
         [HttpGet]
         [Route("amazonreviews")]
-        public async Task<IActionResult> GetAmazonReviews()
+        public IActionResult AmazonReviews()
         {
-            var url = "https://www.amazon.com/Vinci-Code-Dan-Brown/product-reviews/0307474275/ref=cm_cr_dp_d_show_all_top?ie=UTF8&reviewerType=all_reviews";
-            var result = await ProcessScrape(url);
-
-            return Ok(result.Count);
+            return View();
         }
+
+        [HttpPost]
+        [Route("amazonreviewsjson")]
+        public async Task<IActionResult> GetAmazonReviewsJson([FromBody] JsonData data)
+        {
+            if (string.IsNullOrEmpty(data.Content))
+            {
+                return BadRequest("Link Empty");
+            }
+            try
+            {
+                var result = await ProcessScrape(data.Content);
+                return Ok(result);
+            }
+            catch (HttpRequestException e)
+            {
+                return Content("Error processing" + e);
+            }
+        }
+
 
         public async Task<WebPage> Scrapper(string url)
         {
@@ -72,28 +86,33 @@ namespace CommentReview.Controllers
             return homePage;
         }
 
-        public async Task<IList<Amazon>> ProcessScrape(string url)
+        public async Task<IList<AmazonViewModel>> ProcessScrape(string url)
         {
             var baseUrl = "https://www.amazon.com/";
             var homePage = await Scrapper(url);
-            var list = homePage.Html.CssSelect("#cm_cr-review_list div.review");
+            var list = homePage.Html.CssSelect("#cm_cr-review_list .review");
             var nextButton = homePage.Html.CssSelect("#cm_cr-pagination_bar ul.a-pagination > li.a-last").First();
-
+            if(count < 1) { 
             if (!nextButton.HasClass("a-disabled"))
             {
                 var nextlink = nextButton.Element("a").ChildAttributes("href").First().Value;
                 url = baseUrl + nextlink;
-                foreach (var item in list.CssSelect("a.review-title"))
+                foreach (var item in list)
                 {
-                    amazonReviews.Add(
-                        new Amazon() { Star = item. }
+                        amazonReviews.Add(
+                            new AmazonViewModel() {
+                                Star = item.CssSelect(".a-section .a-link-normal .a-icon-alt").First().InnerText,
+                                Date = item.CssSelect(".a-section .review-date").First().InnerText,
+                                Comment = item.CssSelect(".a-section .review-data .review-text").First().InnerText
+                            }
                         );
                 }
-                return amazonReviews;
+                    count++;
+                await ProcessScrape(url);
                 
             }
-
-
+            }
+            
                 return amazonReviews;
          
            
@@ -187,6 +206,47 @@ namespace CommentReview.Controllers
             HttpContext.Response.Body.Write(tempdoc);
 
            
+        }
+
+
+        [HttpPost]
+        [Route("exportreviews")]
+        public void ExportReviewsToCsv([FromBody]IList<AmazonViewModel> model)
+        {
+            StringBuilder comments = new StringBuilder();
+
+            //Add Header - Start
+            comments
+                .Append("Star rating")
+                .Append(',')
+                .Append("Date")
+                .Append(',')
+                .Append("Comment")
+                .AppendLine();
+            //Add Header - End
+
+            //Add content body - start
+            foreach (var item in model)
+            {
+                comments
+              .Append(item.Star.Replace(",", " "))
+              .Append(',')
+              .Append(item.Date.Replace(",", " "))
+              .Append(',')
+              .Append(item.Comment.Replace(",", " "))
+              .AppendLine();
+            }
+            //Add content body - End
+
+            tempdoc = Encoding.ASCII.GetBytes(comments.ToString());
+            //Change response type to force downaload
+            HttpContext.Response.Clear();
+            HttpContext.Response.Headers.Add("Content-Length", tempdoc.Length.ToString());
+            HttpContext.Response.ContentType = "text/csv";
+            HttpContext.Response.Headers.Add("content-disposition", "attachment;filename=AmazonReviews.csv");
+            HttpContext.Response.Body.Write(tempdoc);
+
+
         }
     }
 }

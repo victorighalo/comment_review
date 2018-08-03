@@ -1,0 +1,29 @@
+﻿@*@model IList<CommentReview.Models.AmazonViewModel>*@
+@{
+    ViewData["Title"] = "AmazonReviews";
+}
+
+@*<h2>AmazonReviews</h2>
+@{
+    foreach (var item in Model)
+    {
+        <h3>@item.Comment</h3>
+
+    }
+}*@
+<div class="jumbotron">
+    <h3>Amazon Reviews Extractor</h3>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <div class="form-group">
+                <label>Enter Amazon Product link</label>
+                <input class="form-control" id="amazonlink" />
+            </div>
+            <p id="indicator">Extracting... <small>Please be patient....</small></p>
+            <button class="btn btn-primary btn-md" id="amazon_extract_action">Extract Reviews</button>
+        </div>
+    </div>
+</div>
