@@ -7,16 +7,21 @@ $(document).ready(function () {
     let totalComment = 0;
     let commentsArray = [];
     let youtubeLink;
-
+    let baseUrl = window.location.origin;
 
     //Get Youtube comments wiht link from server
     function GetComments(token = "", link) {
         $.ajax(
             {
-                url: 'http://localhost:51965/youtubecommentsjson/'+link+"/"+token
+                url: baseUrl+"/youtubecommentsjson/"+link+"/"+token
             }).
             done(function (data) {
                 ProcessComments(data);
+            }).
+            fail(function (e) {
+                console.log(e)
+                alert("An Error Occured.");
+                $("#indicator").text("Failed!");
             })
     }
 
@@ -28,7 +33,7 @@ $(document).ready(function () {
                 contentType: 'application/json; charset=utf-8',
                 dateType: 'json',
                 processData:false,
-                url: 'http://localhost:51965/export/',
+                url: baseUrl+'/export/',
                 data: JSON.stringify(commentsArray)
             }).
             done(function (data) {
@@ -59,14 +64,18 @@ $(document).ready(function () {
     
     $("#extract_action").click(function (event) {
         event.preventDefault();
-        $("#downloadCommentsAction").fadeOut();
-        $("#indicator").fadeIn();
         var link = $("#youtubelink").val();
         youtubeLink = youtube_parser(link)
-        if (link === false) {
-            alert("Enter a valid Youtube link");
+        if (link.replace(/\s/g, "") == "") {
+            alert("Please enter a YouTube Video Link");
             return false;
         }
+        if (youtubeLink === false) {
+            alert("Enter a valid Youtube Video link");
+            return false;
+        }
+        $("#downloadCommentsAction").fadeOut();
+        $("#indicator").fadeIn();
         GetComments("", youtubeLink);
     })
 
@@ -98,11 +107,15 @@ $(document).ready(function () {
                 contentType: 'application/json; charset=utf-8',
                 dateType: 'json',
                 processData: false,
-                url: 'http://localhost:51965/amazonreviewsjson/',
+                url: baseUrl+'/amazonreviewsjson/',
                 data: JSON.stringify(data)
             }).
             done(function (data) {
                 PostReviews(data)
+            }).
+            fail(function () {
+                $("#indicator").text("Failed!");
+                alert("An Error Occured. Check the link.")
             })
     }
 
@@ -113,7 +126,7 @@ $(document).ready(function () {
                 contentType: 'application/json; charset=utf-8',
                 dateType: 'json',
                 processData: false,
-                url: 'http://localhost:51965/exportreviews/',
+                url: baseUrl+'/exportreviews/',
                 data: JSON.stringify(data)
             }).
             done(function (data) {
@@ -127,13 +140,13 @@ $(document).ready(function () {
 
     $("#amazon_extract_action").click(function (event) {
         event.preventDefault();
-        $("#downloadReviewsAction").fadeOut();
-        $("#indicator").fadeIn();
         var link = $("#amazonlink").val();
-        if (link == "") {
+        if (link.replace(/\s/g, "") == "") {
             alert("Enter a valid Amazon link");
             return false;
         }
+        $("#downloadReviewsAction").fadeOut();
+        $("#indicator").fadeIn();
         GetAmazonReviews(link);
     })
 
